@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ScrollView01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:scrollbars="vertical">
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:orientation="vertical"
+        android:layout_height="fill_parent">
+        <TextView
+            android:id="@+id/setup_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cluster Monitor Setup"
+            android:textSize="12pt">
+        </TextView>
+        <EditText
+            android:id="@+id/setup_cluster_name"
+            android:layout_height="wrap_content"
+            android:hint="Cluster Name"
+            android:inputType="text"
+            android:layout_width="fill_parent">
+        </EditText>
+        <EditText
+            android:id="@+id/setup_server_ip"
+            android:layout_height="wrap_content"
+            android:hint="Cluster Root Node IP"
+            android:inputType="text"
+            android:layout_width="fill_parent">
+        </EditText>
+        <EditText
+            android:id="@+id/setup_file_location"
+            android:layout_height="wrap_content"
+            android:hint="Cluster Configuration File Location"
+            android:inputType="text"
+            android:layout_width="fill_parent">
+        </EditText>
+        <EditText
+            android:id="@+id/cluster_conf"
+            android:layout_height="wrap_content"
+            android:hint="configuration file"
+            android:inputType="textMultiLine"
+            android:lines="5"
+            android:layout_width="fill_parent">
+        </EditText>
+        <!-- <CheckBox -->
+        <!--     android:id="@+id/CheckBoxResponse" -->
+        <!--     android:layout_height="wrap_content" -->
+        <!--     android:text="feedbackresponse" -->
+        <!--     android:layout_width="fill_parent"> -->
+        <!-- </CheckBox> -->
+        <Button
+            android:id="@+id/ButtonSendFeedback"
+            android:layout_height="wrap_content"
+            android:text="feedbackbutton"
+            android:onClick="sendFeedback"
+            android:layout_width="fill_parent">
+        </Button>
+    </LinearLayout>
+</ScrollView>
