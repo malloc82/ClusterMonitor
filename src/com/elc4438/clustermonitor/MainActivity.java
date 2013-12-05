@@ -7,10 +7,12 @@ package com.elc4438.clustermonitor;
 import java.io.*;
 import java.net.*;
 import java.util.*;   
+import android.net.Uri;
 import org.apache.http.conn.util.InetAddressUtils;
 
 import android.content.Context;
 
+import android.os.AsyncTask;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -27,6 +29,11 @@ import android.net.NetworkInfo;
 import android.widget.TextView;
 import android.widget.EditText;
 
+import android.content.res.Resources;
+
+import com.jcraft.jsch.*;
+
+
 // public class MainActivity extends Activity {
 //     @Override
 //     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +48,7 @@ import android.widget.EditText;
  
 public class MainActivity extends Activity {
  
+	Resources resources;
     ExpandableListAdapter listAdapter;
     ExpandableListView expListView;
     List<String> listDataHeader;
@@ -49,6 +57,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        resources = this.getResources();
         setContentView(R.layout.project_setup);
     }
 
@@ -73,7 +82,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.read_test);
 
         TextView read_val_1 = (TextView) findViewById(R.id.read_val_1);
-        read_val_1.setText(cluster_name + " 2 ");
+        read_val_1.setText(cluster_name);
 
         TextView read_val_2 = (TextView) findViewById(R.id.read_val_2);
         read_val_2.setText(ip);
@@ -83,6 +92,10 @@ public class MainActivity extends Activity {
 
         TextView read_val_4 = (TextView) findViewById(R.id.read_val_3);
         read_val_4.setText("IP : " + getIPAddress(true));
+        HashMap<String, String> hostinfo = new HashMap<String, String>();
+        hostinfo.put("user", "zcai");
+        hostinfo.put("host", "192.168.8.103");
+        new remoteExecution().execute(hostinfo);
     }
 
     public void clusterStatus(View button) {
@@ -227,5 +240,68 @@ public class MainActivity extends Activity {
         return "";
     }
 
+
+    private class remoteExecution extends AsyncTask<HashMap<String, String>, Integer, String> {
+        String msg;
+        @Override
+        protected String doInBackground(HashMap<String, String>... hostinfo) {
+            JSch jsch = new JSch();
+            Session session = null;
+            try {
+                String username = hostinfo[0].get("user");
+                String host = hostinfo[0].get("host");
+                // final byte[] emptyPassPhrase = new byte[0];
+                //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
+                
+                jsch.addIdentity("local",
+                                 getkeybytes(R.raw.prvkey),
+                                 getkeybytes(R.raw.pubkey),
+                                 new byte[0]);
+                session = jsch.getSession(username, host, 22);
+                session.setConfig("StrictHostKeyChecking", "no");
+                session.setConfig("PreferredAuthentications", "publickey");
+                // out.println("here1");
+                // session.setConfig("StrictHostKeyChecking", "no");            
+                // session.setPassword("Password");
+                session.connect();
+                // out.println("here2");
+
+                Channel channel = session.openChannel("sftp");
+                channel.connect();
+                ChannelSftp sftpChannel = (ChannelSftp) channel;
+
+                sftpChannel.get("dummy.txt", "dummy_copy.txt");
+                sftpChannel.exit();
+                session.disconnect();
+                msg = "download success";
+                return msg;
+            } catch (JSchException e) {
+                e.printStackTrace(); 
+                return "download failed";
+            } catch (SftpException e) {
+                e.printStackTrace();
+                return "download failed";
+            }
+        }
+        private byte[] getkeybytes(int res_id) {
+            InputStream key_stream = resources.openRawResource(res_id);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            try {
+                int nRead;
+                byte[] data = new byte[1024];
+                
+                while ((nRead = key_stream.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                
+                buffer.flush();
+                key_stream.close();
+                return buffer.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new byte[0];
+            }
+        }
+    }
 
 }
