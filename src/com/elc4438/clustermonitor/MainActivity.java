@@ -13,6 +13,9 @@ import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.Toast;
 
+import android.widget.TextView;
+import android.widget.EditText;
+
 // public class MainActivity extends Activity {
 //     @Override
 //     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +48,29 @@ public class MainActivity extends Activity {
     // @Override
     // protected void onCreate(Bundle savedInstanceState) {
         // super.onCreate(savedInstanceState);
+
+    public void submission_test(View button) {
+        final EditText nameField = (EditText) findViewById(R.id.setup_cluster_name);
+        String cluster_name = nameField.getText().toString();
+
+        final EditText ipField = (EditText) findViewById(R.id.setup_server_ip);
+        String ip = ipField.getText().toString();
+
+        final EditText locationField = (EditText) findViewById(R.id.setup_file_location);
+        String location = locationField.getText().toString();
+        
+        setContentView(R.layout.read_test);
+
+        TextView read_val_1 = (TextView) findViewById(R.id.read_val_1);
+        read_val_1.setText(cluster_name + " 2 ");
+
+        TextView read_val_2 = (TextView) findViewById(R.id.read_val_2);
+        read_val_2.setText(ip);
+
+        TextView read_val_3 = (TextView) findViewById(R.id.read_val_3);
+        read_val_3.setText(location);
+    }
+
     public void clusterStatus(View button) {
         setContentView(R.layout.activity_main);
  

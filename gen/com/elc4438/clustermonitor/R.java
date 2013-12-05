@@ -26,11 +26,17 @@ public final class R {
     public static final class id {
         public static final int ButtonSendFeedback=0x7f080009;
         public static final int ScrollView01=0x7f080003;
-        public static final int action_settings=0x7f08000a;
+        public static final int action_settings=0x7f080010;
         public static final int cluster_conf=0x7f080008;
         public static final int lblListHeader=0x7f080001;
         public static final int lblListItem=0x7f080002;
         public static final int lvExp=0x7f080000;
+        public static final int read_val_1=0x7f08000a;
+        public static final int read_val_2=0x7f08000b;
+        public static final int read_val_3=0x7f08000c;
+        public static final int read_val_4=0x7f08000d;
+        public static final int read_val_5=0x7f08000e;
+        public static final int read_val_6=0x7f08000f;
         public static final int setup_cluster_name=0x7f080005;
         public static final int setup_file_location=0x7f080007;
         public static final int setup_server_ip=0x7f080006;
@@ -41,6 +47,7 @@ public final class R {
         public static final int list_group=0x7f030001;
         public static final int list_item=0x7f030002;
         public static final int project_setup=0x7f030003;
+        public static final int read_test=0x7f030004;
     }
     public static final class menu {
         public static final int main=0x7f070000;

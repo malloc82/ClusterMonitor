@@ -54,7 +54,7 @@
             android:id="@+id/ButtonSendFeedback"
             android:layout_height="wrap_content"
             android:text="feedbackbutton"
-            android:onClick="sendFeedback"
+            android:onClick="submission_test"
             android:layout_width="fill_parent">
         </Button>
     </LinearLayout>
