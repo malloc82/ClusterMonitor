@@ -1,8 +1,16 @@
 package com.elc4438.clustermonitor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+// import java.util.ArrayList;
+// import java.util.HashMap;
+// import java.util.List;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;   
+import org.apache.http.conn.util.InetAddressUtils;
+
+import android.content.Context;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -12,6 +20,9 @@ import android.widget.ExpandableListView.OnGroupClickListener;
 import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.Toast;
+
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import android.widget.TextView;
 import android.widget.EditText;
@@ -44,7 +55,7 @@ public class MainActivity extends Activity {
     public void project_setup(View button) {
         setContentView(R.layout.project_setup);
     }
- 
+
     // @Override
     // protected void onCreate(Bundle savedInstanceState) {
         // super.onCreate(savedInstanceState);
@@ -69,6 +80,9 @@ public class MainActivity extends Activity {
 
         TextView read_val_3 = (TextView) findViewById(R.id.read_val_3);
         read_val_3.setText(location);
+
+        TextView read_val_4 = (TextView) findViewById(R.id.read_val_3);
+        read_val_4.setText("IP : " + getIPAddress(true));
     }
 
     public void clusterStatus(View button) {
@@ -172,4 +186,46 @@ public class MainActivity extends Activity {
         listDataChild.put(listDataHeader.get(1), Group2);
         listDataChild.put(listDataHeader.get(2), Group3);
     }
+
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        if (ni == null) {
+            // There are no active networks.
+            return false;
+        } else
+            return true;
+    } 
+
+    /**
+     * Get IP address from first non-localhost interface
+     * @param ipv4  true=return ipv4, false=return ipv6
+     * @return  address or empty string
+     */
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress().toUpperCase();
+                        boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr); 
+                        if (useIPv4) {
+                            if (isIPv4) 
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 port suffix
+                                return delim<0 ? sAddr : sAddr.substring(0, delim);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) { } // for now eat exceptions
+        return "";
+    }
+
+
 }
