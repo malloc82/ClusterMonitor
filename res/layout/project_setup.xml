@@ -51,11 +51,19 @@
         <!--     android:layout_width="fill_parent"> -->
         <!-- </CheckBox> -->
         <Button
-            android:id="@+id/ButtonSendFeedback"
+            android:id="@+id/ButtonReadTest"
             android:layout_height="wrap_content"
-            android:text="feedbackbutton"
+            android:text="Read Test"
             android:onClick="submission_test"
             android:layout_width="fill_parent">
         </Button>
+        <Button
+            android:id="@+id/ButtonListTest"
+            android:layout_height="wrap_content"
+            android:text="List Test"
+            android:onClick="clusterStatus"
+            android:layout_width="fill_parent">
+        </Button>
+
     </LinearLayout>
 </ScrollView>

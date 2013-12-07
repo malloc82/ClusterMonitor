@@ -18,15 +18,28 @@
 
 <!-- </RelativeLayout> -->
 <!-- <?xml version="1.0" encoding="utf-8"?> -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:background="#f4f4f4" >
- 
-            <ExpandableListView
-                android:id="@+id/lvExp"
-                android:layout_height="match_parent"
-                android:layout_width="match_parent"/>  
- 
-</LinearLayout>
+
+    <ExpandableListView
+        android:id="@+id/lvExp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/ButtonBackToMain" >
+
+    </ExpandableListView>
+    <!-- Button has to stay below ... somewhow -->
+    <Button
+        android:id="@+id/ButtonBackToMain"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:onClick="project_setup"
+        android:text="Back" />
+
+</RelativeLayout>
+
