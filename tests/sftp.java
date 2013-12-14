@@ -2,7 +2,26 @@ import static java.lang.System.out;
 import com.jcraft.jsch.*;
 
 public class sftp {
-    public static void main(String args[]) {
+        private byte[] getkeybytes(int res_id) {
+            InputStream key_stream = resources.openRawResource(res_id);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            try {
+                int nRead;
+                byte[] data = new byte[1024];
+                
+                while ((nRead = key_stream.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                
+                buffer.flush();
+                key_stream.close();
+                return buffer.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new byte[0];
+            }
+        }
+    public static void main(String[] args) {
         JSch jsch = new JSch();
         Session session = null;
         try {

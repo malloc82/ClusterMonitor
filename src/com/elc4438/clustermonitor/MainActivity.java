@@ -127,7 +127,7 @@ public class MainActivity extends Activity {
         HashMap<String, String> hostinfo = new HashMap<String, String>();
         hostinfo.put("user", "zcai");
         hostinfo.put("host", "192.168.8.103");
-        new remoteExecution2().execute(hostinfo);
+        new FetchClusterInfo().execute(hostinfo);
 
         // get the listview
  
@@ -213,7 +213,6 @@ public class MainActivity extends Activity {
         Node3.add("second");
         Node3.add("third");
 
- 
         NodeMessages.put(ClusterNodes.get(0), Node1); // Node, Node message
         NodeMessages.put(ClusterNodes.get(1), Node2);
         NodeMessages.put(ClusterNodes.get(2), Node3);
@@ -300,7 +299,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class remoteExecution1 extends AsyncTask<HashMap<String, String>, Integer, String> {
+    private class FetchClusterInfo extends AsyncTask<HashMap<String, String>, Integer, String> {
         @Override
         protected String doInBackground(HashMap<String, String>... hostinfo) {
             JSch jsch = new JSch();
@@ -396,5 +395,4 @@ public class MainActivity extends Activity {
             listAdapter.notifyDataSetChanged();
         }
     }
-
 }
