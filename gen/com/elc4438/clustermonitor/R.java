@@ -31,15 +31,15 @@ public final class R {
         public static final int ScrollView01=0x7f090004;
         public static final int action_settings=0x7f090013;
         public static final int cluster_conf=0x7f090009;
+        public static final int file_content=0x7f090010;
         public static final int lblListHeader=0x7f090002;
         public static final int lblListItem=0x7f090003;
         public static final int lvExp=0x7f090000;
+        public static final int parse_status=0x7f090011;
         public static final int read_val_1=0x7f09000c;
         public static final int read_val_2=0x7f09000d;
         public static final int read_val_3=0x7f09000e;
         public static final int read_val_4=0x7f09000f;
-        public static final int read_val_5=0x7f090010;
-        public static final int read_val_6=0x7f090011;
         public static final int setup_cluster_name=0x7f090006;
         public static final int setup_file_location=0x7f090008;
         public static final int setup_server_ip=0x7f090007;

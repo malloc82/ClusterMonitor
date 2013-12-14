@@ -1,4 +1,0 @@
-    boxster    zcai@192.168.8.103     .ssh/id_rsa.pub
-
-boxster2   zcai2@192.168.8.104    .ssh/id_rsa.pub
-

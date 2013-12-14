@@ -22,6 +22,7 @@ import android.widget.ExpandableListView.OnGroupClickListener;
 import android.widget.ExpandableListView.OnGroupCollapseListener;
 import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.Toast;
+import android.util.Log;
 
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -53,9 +54,12 @@ public class MainActivity extends Activity {
     ExpandableListAdapter listAdapter;
     ExpandableListView    expListView;
 
+    Cluster servers;
+
     List<String> ClusterNodes;
     HashMap<String, List<String>> NodeMessages;
-    private TextView async_test;
+    private TextView file_content_view;
+    private TextView parse_status_view;
     private int remote2;
 
     @Override
@@ -105,12 +109,16 @@ public class MainActivity extends Activity {
         HashMap<String, String> hostinfo = new HashMap<String, String>();
         hostinfo.put("user", "zcai");
         hostinfo.put("host", "192.168.8.103");
-        async_test = (TextView) findViewById(R.id.read_val_5);
-        async_test.setText("Waiting ...");
-        new remoteExecution1().execute(hostinfo);
+        hostinfo.put("config", "sandbox/app_test/cluster_config.txt");
+        file_content_view = (TextView) findViewById(R.id.file_content);
+        file_content_view.setText("Waiting ...");
+
+        parse_status_view = (TextView) findViewById(R.id.parse_status);
+        parse_status_view.setText("N/A");
+        new FetchClusterInfo().execute(hostinfo);
         // try {
         //     String result = new remoteExecution().execute(hostinfo).get();
-        //     TextView read_val_5 = (TextView) findViewById(R.id.read_val_5);
+        //     TextView file_content = (TextView) findViewById(R.id.file_content);
         //     read_val_4.setText(result);
         // } catch(Exception e) {
         //     e.printStackTrace();
@@ -124,10 +132,11 @@ public class MainActivity extends Activity {
         expListView = (ExpandableListView) findViewById(R.id.lvExp);
         expListView.setAdapter(listAdapter);
 
-        HashMap<String, String> hostinfo = new HashMap<String, String>();
-        hostinfo.put("user", "zcai");
-        hostinfo.put("host", "192.168.8.103");
-        new FetchClusterInfo().execute(hostinfo);
+        // HashMap<String, String> hostinfo = new HashMap<String, String>();
+        // hostinfo.put("user", "zcai");
+        // hostinfo.put("host", "192.168.8.103");
+        // hostinfo.put("config", "sandbox/app_test/cluster_config.txt");
+        new remoteExecution2().execute(servers.cluster_map.get("boxster"));
 
         // get the listview
  
@@ -260,19 +269,44 @@ public class MainActivity extends Activity {
         return "";
     }
 
-    private byte[] getkeybytes(int res_id) {
-        InputStream key_stream = resources.openRawResource(res_id);
+    public static Cluster parseConfigfile(String file_content, ChannelSftp ch) {
+        try {
+            Cluster cluster = new Cluster();
+            String[] entries = file_content.split("\n");
+            for (int i=0; i < entries.length; ++i) {
+                entries[i] = entries[i].trim();
+                if (entries[i].length() > 0) {
+                    String[] fields = entries[i].split("\\s+");
+                    String[] user_ip = fields[1].split("@");
+                    ClusterNode node = new ClusterNode(fields[0], user_ip[0], user_ip[1], fields[2]);
+                    if (!node.getKey(ch)) {
+                        Log.w("ClusterMonitor::parseConfigfile", "fail to get keybyte for "+user_ip[1]);
+                    }
+                    cluster.addNode(node);
+                }
+            }
+            return cluster;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    // public static  byte[] getkeybytes(int res_id) {
+    public static  byte[] getkeybytes(InputStream stream) {
+        // InputStream key_stream = resources.openRawResource(res_id);
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try {
             int nRead;
             byte[] data = new byte[1024];
                 
-            while ((nRead = key_stream.read(data, 0, data.length)) != -1) {
+            while ((nRead = stream.read(data, 0, data.length)) != -1) {
                 buffer.write(data, 0, nRead);
             }
                 
             buffer.flush();
-            key_stream.close();
+            stream.close();
             return buffer.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
@@ -280,7 +314,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private String readStream(InputStream in) {
+    public static String readStream(InputStream in) {
         ByteArrayOutputStream  buffer = new ByteArrayOutputStream();
         try {
             int nRead;
@@ -300,19 +334,27 @@ public class MainActivity extends Activity {
     }
 
     private class FetchClusterInfo extends AsyncTask<HashMap<String, String>, Integer, String> {
+        private boolean success;
+        private JSch jsch = new JSch();
+        private Session session = null;
+        private ChannelSftp sftpChannel;
         @Override
         protected String doInBackground(HashMap<String, String>... hostinfo) {
-            JSch jsch = new JSch();
-            Session session = null;
+            success = false;
+            jsch = new JSch();
+            session = null;
             try {
-                String username = hostinfo[0].get("user");
-                String host = hostinfo[0].get("host");
+                String username    = hostinfo[0].get("user");
+                String host        = hostinfo[0].get("host");
+                String config_file = hostinfo[0].get("config");
                 // final byte[] emptyPassPhrase = new byte[0];
                 //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
+                InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
+                InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
                 
                 jsch.addIdentity("boxster",
-                                 getkeybytes(R.raw.prvkey),
-                                 getkeybytes(R.raw.pubkey),
+                                 MainActivity.getkeybytes(prvkey_stream),
+                                 MainActivity.getkeybytes(pubkey_stream),
                                  new byte[0]);
                 session = jsch.getSession(username, host, 22);
                 session.setConfig("StrictHostKeyChecking", "no");
@@ -325,12 +367,15 @@ public class MainActivity extends Activity {
 
                 Channel channel = session.openChannel("sftp");
                 channel.connect();
-                ChannelSftp sftpChannel = (ChannelSftp) channel;
+                sftpChannel = (ChannelSftp) channel;
 
                 // sftpChannel.get("dummy.txt", "dummy_copy.txt");
-                String result = readStream(sftpChannel.get("dummy.txt"));
-                sftpChannel.exit();
-                session.disconnect();
+                Log.w("cluster monitor debug: ", config_file);
+                String result = MainActivity.readStream(sftpChannel.get(config_file));
+                Log.w("cluster monitor debug: ", config_file);
+                // sftpChannel.exit();
+                // session.disconnect();
+                success = true;
                 return result;
             } catch (JSchException e) {
                 e.printStackTrace(); 
@@ -340,25 +385,44 @@ public class MainActivity extends Activity {
                 return "download failed 2";
             }
         }
+
         protected void onPostExecute(String result) {
-            async_test.setText(result);
+            file_content_view.setText(result);
+            if (success == true) {
+                servers = parseConfigfile(result, sftpChannel);
+                sftpChannel.exit();
+                session.disconnect();
+                parse_status_view.setText(servers.toString());
+                // parse_status_view.setText("Waiting for parsing result ...");
+            }
         }
     }
 
-    private class remoteExecution2 extends AsyncTask<HashMap<String, String>, Integer, String> {
+    private class remoteExecution2 extends AsyncTask<ClusterNode, Integer, String> {
+        private boolean success;
         @Override
-        protected String doInBackground(HashMap<String, String>... hostinfo) {
+        protected String doInBackground(ClusterNode... node) {
+            success = false;
             JSch jsch = new JSch();
             Session session = null;
             try {
-                String username = hostinfo[0].get("user");
-                String host = hostinfo[0].get("host");
+                String label    = node[0].getName();
+                String username = node[0].getUser();
+                String host     = node[0].getIp();
                 // final byte[] emptyPassPhrase = new byte[0];
                 //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
-                
-                jsch.addIdentity("boxster",
-                                 getkeybytes(R.raw.prvkey),
-                                 getkeybytes(R.raw.pubkey),
+                // InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
+                // InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
+                Log.w("debug", node[0].toString());
+
+                ClusterNodes.add(label);
+                listAdapter.notifyDataSetChanged();
+                int index = ClusterNodes.indexOf(label);
+
+
+                jsch.addIdentity(label,
+                                 node[0].prvkey,
+                                 node[0].pubkey,
                                  new byte[0]);
                 session = jsch.getSession(username, host, 22);
                 session.setConfig("StrictHostKeyChecking", "no");
@@ -366,33 +430,41 @@ public class MainActivity extends Activity {
                 // out.println("here1");
                 // session.setConfig("StrictHostKeyChecking", "no");            
                 // session.setPassword("Password");
+                Log.w("debug", "here1");
                 session.connect();
+                Log.w("debug", "here2");
                 // out.println("here2");
 
-                Channel channel = session.openChannel("sftp");
+                Channel channel = session.openChannel("exec");
+                ((ChannelExec)channel).setCommand("tail -n 1 log.txt");
+                channel.setInputStream(null);
+                ((ChannelExec)channel).setErrStream(System.err);
+                InputStream output_stream=channel.getInputStream();
+                Log.w("debug", "here3");
                 channel.connect();
-                ChannelSftp sftpChannel = (ChannelSftp) channel;
-
-                // sftpChannel.get("dummy.txt", "dummy_copy.txt");
-                String result = readStream(sftpChannel.get("dummy.txt"));
-                sftpChannel.exit();
-                session.disconnect();
-                return result;
+                String output = readStream(output_stream);
+                List<String> msg = new ArrayList<String>();
+                msg.add(output);
+                NodeMessages.put(ClusterNodes.get(index), msg);
+                listAdapter.notifyDataSetChanged();
+                channel.disconnect();
+                
+                return "good";
+            } catch (IOException e) {
+                e.printStackTrace();                 
+                return "remote execute failed IO";
             } catch (JSchException e) {
                 e.printStackTrace(); 
-                return "download failed 1";
-            } catch (SftpException e) {
-                e.printStackTrace();
-                return "download failed 2";
+                return "remote execute failed 1";
             }
         }
-        protected void onPostExecute(String result) {
-            // async_test.setText(result);
-            ClusterNodes.add("Boxster");
-            List<String> Boxster_msg = new ArrayList<String>();
-            Boxster_msg.add("ddd");
-            NodeMessages.put(ClusterNodes.get(0), Boxster_msg);
-            listAdapter.notifyDataSetChanged();
-        }
+        // protected void onPostExecute(String result) {
+        //     // file_content_view.setText(result);
+        //     ClusterNodes.add("Boxster");
+        //     List<String> Boxster_msg = new ArrayList<String>();
+        //     Boxster_msg.add("ddd");
+        //     NodeMessages.put(ClusterNodes.get(0), Boxster_msg);
+        //     listAdapter.notifyDataSetChanged();
+        // }
     }
 }
