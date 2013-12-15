@@ -84,46 +84,58 @@ public class MainActivity extends Activity {
         // super.onCreate(savedInstanceState);
 
     public void submission_test(View button) {
-        final EditText nameField = (EditText) findViewById(R.id.setup_cluster_name);
-        String cluster_name = nameField.getText().toString();
+        final EditText login_field = (EditText) findViewById(R.id.login_name);
+        String login = login_field.getText().toString();
 
-        final EditText ipField = (EditText) findViewById(R.id.setup_server_ip);
-        String ip = ipField.getText().toString();
+        final EditText ip_field = (EditText) findViewById(R.id.server_ip);
+        String[] ip_port = ip_field.getText().toString().split(":");
+        String port = "22";
+        String ip = ip_port[0];
+        if (ip_port.length > 1) {
+            port = ip_port[1];
+        }
 
-        final EditText locationField = (EditText) findViewById(R.id.setup_file_location);
-        String location = locationField.getText().toString();
+        final EditText config_file_Field = (EditText) findViewById(R.id.setup_config_file);
+        String config_file = config_file_Field.getText().toString();
         
         setContentView(R.layout.read_test);
 
         TextView read_val_1 = (TextView) findViewById(R.id.read_val_1);
-        read_val_1.setText(cluster_name);
+        read_val_1.setText(login);
 
         TextView read_val_2 = (TextView) findViewById(R.id.read_val_2);
-        read_val_2.setText(ip);
+        read_val_2.setText(ip + ":" + port);
 
         TextView read_val_3 = (TextView) findViewById(R.id.read_val_3);
-        read_val_3.setText(location);
+        read_val_3.setText(config_file);
 
         TextView read_val_4 = (TextView) findViewById(R.id.read_val_4);
         read_val_4.setText("IP : " + getIPAddress(true));
 
         HashMap<String, String> hostinfo = new HashMap<String, String>();
+
         hostinfo.put("user", "zcai");
         hostinfo.put("host", "192.168.8.103");
+        hostinfo.put("port", "22");
         hostinfo.put("config", "sandbox/app_test/cluster_config.txt");
+        hostinfo.put("key_folder", "sandbox/app_test");
+
+        // hostinfo.put("user", login);
+        // hostinfo.put("host", ip);
+        // hostinfo.put("port", port);
+        // hostinfo.put("config", config_file);
+
         file_content_view = (TextView) findViewById(R.id.file_content);
         file_content_view.setText("Waiting ...");
 
         parse_status_view = (TextView) findViewById(R.id.parse_status);
         parse_status_view.setText("N/A");
-        new FetchClusterInfo().execute(hostinfo);
-        // try {
-        //     String result = new remoteExecution().execute(hostinfo).get();
-        //     TextView file_content = (TextView) findViewById(R.id.file_content);
-        //     read_val_4.setText(result);
-        // } catch(Exception e) {
-        //     e.printStackTrace();
-        // }
+
+        try {
+            new FetchClusterInfo().execute(hostinfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -133,124 +145,28 @@ public class MainActivity extends Activity {
         expListView = (ExpandableListView) findViewById(R.id.lvExp);
         expListView.setAdapter(listAdapter);
 
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
-        TimerTask doAsynchronousTask = new TimerTask() {       
-                @Override
-                public void run() {
-                    handler.post(new Runnable() {
-                            public void run() {       
-                                try {
-                                    new NodeUpdate().execute(servers.cluster_map.get("boxster"));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+        for (Map.Entry entry : servers.cluster_map.entrySet()) {
+            // System.out.print("key,val: ");
+            // System.out.println(entry.getKey() + "," + entry.getValue());
+            final ClusterNode node = (ClusterNode)entry.getValue();
+            final Handler handler = new Handler();
+            Timer timer = new Timer();
+            TimerTask doAsynchronousTask = new TimerTask() {       
+                    @Override
+                    public void run() {
+                        handler.post(new Runnable() {
+                                public void run() {       
+                                    try {
+                                        new NodeUpdate().execute(node);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                            }
-                        });
-                }
-            };
-        timer.schedule(doAsynchronousTask, 0, 10000); //execute in every 50000 ms
-    }
-
-    public void clusterStatus_async_task(View button) {
-        setContentView(R.layout.activity_main);
- 
-        expListView = (ExpandableListView) findViewById(R.id.lvExp);
-        expListView.setAdapter(listAdapter);
-
-        // HashMap<String, String> hostinfo = new HashMap<String, String>();
-        // hostinfo.put("user", "zcai");
-        // hostinfo.put("host", "192.168.8.103");
-        // hostinfo.put("config", "sandbox/app_test/cluster_config.txt");
-        new NodeUpdate().execute(servers.cluster_map.get("boxster"));
-
-        // get the listview
- 
-        // preparing list data
-        // prepareListData();
-  
-        // Listview Group click listener
-        // expListView.setOnGroupClickListener(new OnGroupClickListener() {
- 
-        //     @Override
-        //     public boolean onGroupClick(ExpandableListView parent, View v,
-        //             int groupPosition, long id) {
-        //         // Toast.makeText(getApplicationContext(),
-        //         // "Group Clicked " + ClusterNodes_list.get(groupPosition),
-        //         // Toast.LENGTH_SHORT).show();
-        //         return false;
-        //     }
-        // });
- 
-        // Listview Group expanded listener
-        // expListView.setOnGroupExpandListener(new OnGroupExpandListener() {
-        //     @Override
-        //     public void onGroupExpand(int groupPosition) {
-        //         Toast.makeText(getApplicationContext(),
-        //                 ClusterNodes_list.get(groupPosition) + " Expanded",
-        //                 Toast.LENGTH_SHORT).show();
-        //     }
-        // });
- 
-        // Listview Group collasped listener
-        // expListView.setOnGroupCollapseListener(new OnGroupCollapseListener() {
-        //     @Override
-        //     public void onGroupCollapse(int groupPosition) {
-        //         Toast.makeText(getApplicationContext(),
-        //                 ClusterNodes_list.get(groupPosition) + " Collapsed",
-        //                 Toast.LENGTH_SHORT).show();
- 
-        //     }
-        // });
- 
-        // Listview on child click listener
-        // expListView.setOnChildClickListener(new OnChildClickListener() {
- 
-        //     @Override
-        //     public boolean onChildClick(ExpandableListView parent, View v,
-        //             int groupPosition, int childPosition, long id) {
-        //         // TODO Auto-generated method stub
-        //         Toast.makeText(
-        //                 getApplicationContext(),
-        //                 ClusterNodes_list.get(groupPosition)
-        //                         + " : "
-        //                         + NodeMessages.get(
-        //                                 ClusterNodes_list.get(groupPosition)).get(
-        //                                 childPosition), Toast.LENGTH_SHORT)
-        //                 .show();
-        //         return false;
-        //     }
-        // });
-    }
- 
-    /*
-     * Preparing the list data
-     */
-    private void prepareListData() { 
-        // Adding child data
-        ClusterNodes_list.add("Node1");
-        ClusterNodes_list.add("Node2");
-        ClusterNodes_list.add("Node3");
- 
-        // Adding child data
-        List<String> Node1 = new ArrayList<String>();
-        Node1.add("item1");
-        Node1.add("item2");
-        
-        List<String> Node2 = new ArrayList<String>();
-        Node2.add("item1");
-        Node2.add("item2");
-        Node2.add("item3");
-        
- 
-        List<String> Node3 = new ArrayList<String>();
-        Node3.add("first");
-        Node3.add("second");
-        Node3.add("third");
-
-        NodeMessages.put(ClusterNodes_list.get(0), Node1); // Node, Node message
-        NodeMessages.put(ClusterNodes_list.get(1), Node2);
-        NodeMessages.put(ClusterNodes_list.get(2), Node3);
+                            });
+                    }
+                };
+            timer.schedule(doAsynchronousTask, 0, 10000); //execute in every 10s
+        }
     }
 
     private boolean isNetworkConnected() {
@@ -295,7 +211,7 @@ public class MainActivity extends Activity {
         return "";
     }
 
-    public static Cluster parseConfigfile(String file_content, ChannelSftp ch) {
+    public static Cluster parseConfigfile(String file_content, ChannelSftp ch, String key_folder) {
         try {
             Cluster cluster = new Cluster();
             String[] entries = file_content.split("\n");
@@ -304,11 +220,16 @@ public class MainActivity extends Activity {
                 if (entries[i].length() > 0) {
                     String[] fields = entries[i].split("\\s+");
                     String[] user_ip = fields[1].split("@");
-                    ClusterNode node = new ClusterNode(fields[0], user_ip[0], user_ip[1], fields[2]);
-                    if (!node.getKey(ch)) {
+                    String[] ip_port = user_ip[1].split(":");
+                    String port="22";
+                    if (ip_port.length > 1) {
+                        port = ip_port[1];
+                    }
+                    ClusterNode node = new ClusterNode(fields[0], user_ip[0], ip_port[0], port, fields[2]);
+                    if (!node.getKey(ch, key_folder)) {
                         Log.w("ClusterMonitor::parseConfigfile", "fail to get keybyte for "+user_ip[1]);
                     } else {
-                        Log.w("ClusterMonitor::parseConfigfile", "key fetched");
+                        Log.w("ClusterMonitor::parseConfigfile", ip_port[0] + ":" + port  + " --   key fetched");
                     }
                     cluster.addNode(node);
                 }
@@ -372,10 +293,14 @@ public class MainActivity extends Activity {
             jsch = new JSch();
             session = null;
             try {
+                Log.w("App Debug : ", "in FetchClusterInfo 1");
                 String username    = hostinfo[0].get("user");
                 String host        = hostinfo[0].get("host");
+                String port        = hostinfo[0].get("port");
                 String config_file = hostinfo[0].get("config");
-                Log.w("App Debug: ", "in FetchClusterInfo " + username + " " + host + " " + config_file);
+                String key_folder  = hostinfo[0].get("key_folder");
+                Log.w("App Debug: ", "in FetchClusterInfo " 
+                      + username + " " + host + ":" + port + " " + config_file);
                 InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
                 InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
                 
@@ -399,6 +324,9 @@ public class MainActivity extends Activity {
                 // sftpChannel.get("dummy.txt", "dummy_copy.txt");
                 String result = MainActivity.readStream(sftpChannel.get(config_file));
                 Log.w("cluster monitor debug: ", config_file);
+
+                servers = parseConfigfile(result, sftpChannel, key_folder);
+
                 // sftpChannel.exit();
                 // session.disconnect();
                 success = true;
@@ -415,13 +343,16 @@ public class MainActivity extends Activity {
         protected void onPostExecute(String result) {
             file_content_view.setText(result);
             if (success == true) {
-                Log.w("Debug: ", "onPostExecute  " + result);
-                servers = parseConfigfile(result, sftpChannel);
-                Log.w("Debug: ", "Server setup complete");
-                sftpChannel.exit();
-                session.disconnect();
-                parse_status_view.setText(servers.toString());
-                // parse_status_view.setText("Waiting for parsing result ...");
+                try {
+                    Log.w("Debug: ", "onPostExecute  " + result);
+                    Log.w("Debug: ", "Server setup complete");
+                    sftpChannel.exit();
+                    session.disconnect();
+                    parse_status_view.setText(servers.toString());
+                    // parse_status_view.setText("Waiting for parsing result ...");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -439,6 +370,7 @@ public class MainActivity extends Activity {
                 node_name       = node[0].getName();
                 String username = node[0].getUser();
                 String host     = node[0].getIp();
+                int    port     = Integer.parseInt(node[0].getPort());
                 Log.w("debug", node[0].toString());
                 byte[] prvkey_copy = node[0].prvkey.clone();
                 jsch.addIdentity(node_name,
@@ -450,17 +382,19 @@ public class MainActivity extends Activity {
                 } else {
                     Log.w("Debuge NodeUPdate: ", "keys changed.");
                 }
-                session = jsch.getSession(username, host, 22);
+                session = jsch.getSession(username, host, port);
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.setConfig("PreferredAuthentications", "publickey");
                 session.connect();
-
+                Log.w("lego debug:", node_name + "  here1");
                 Channel channel = session.openChannel("exec");
                 ((ChannelExec)channel).setCommand("tail -n 1 log.txt");
                 channel.setInputStream(null);
                 ((ChannelExec)channel).setErrStream(System.err);
                 InputStream output_stream=channel.getInputStream();
+                Log.w("lego debug:", node_name + "  here2");
                 channel.connect();
+                Log.w("lego debug:", node_name + "  here3");
                 String output = readStream(output_stream);
                 channel.disconnect();
                 return output;

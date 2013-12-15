@@ -8,23 +8,25 @@ public class ClusterNode {
     private String name;
     private String user;
     private String ip;
-    private String key_dir;
+    private String port;
+    private String work_dir;
     private String last_entry;
-    public byte[] pubkey;
+    public  byte[] pubkey;
     public  byte[] prvkey;
     
     public ClusterNode () {
         name   = "noname";
         user   = "none";
         ip     = "0.0.0.0";
-        key_dir = "";
+        work_dir = "";
         last_entry = "";
     }
-    public ClusterNode (String node_name, String node_user, String node_ip, String node_key) {
+    public ClusterNode (String node_name, String node_user, String node_ip, String node_port, String dir) {
         name        = node_name;
         user        = node_user;
         ip          = node_ip;
-        key_dir     = node_key;
+        port        = node_port;
+        work_dir    = dir;
         last_entry  = "";
     }
 
@@ -39,21 +41,20 @@ public class ClusterNode {
     public String getIp () {
         return ip;
     }
+
+    public String getPort () {
+        return port;
+    }
     
     public String toString() {
-        return "name="+name+";ip="+user+"@"+ip+";key="+key_dir;
+        return "name="+name+";ip="+user+"@"+ip+":"+port+";work_dir="+work_dir;
     }
 
-    public boolean getKey(ChannelSftp ch) {
+    public boolean getKey(ChannelSftp ch, String key_folder) {
         try {
-            if (key_dir.equals("")) {
-                Log.w("Cluster Monitor::ClusterNode::getKey()", "pubkey_path is empty");
-                return false;
-            } else {
-                pubkey = MainActivity.getkeybytes(ch.get(key_dir+"/pubkey"));
-                prvkey = MainActivity.getkeybytes(ch.get(key_dir+"/prvkey"));
-                return true;
-            }
+            pubkey = MainActivity.getkeybytes(ch.get(key_folder+"/"+name+"/pubkey"));
+            prvkey = MainActivity.getkeybytes(ch.get(key_folder+"/"+name+"/prvkey"));
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
