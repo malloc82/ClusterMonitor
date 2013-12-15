@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
 
     Cluster servers;
 
-    List<String> ClusterNodes;
+    List<String> ClusterNodes_list;
     HashMap<String, List<String>> NodeMessages;
     private TextView file_content_view;
     private TextView parse_status_view;
@@ -66,9 +66,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        ClusterNodes = new ArrayList<String>();
+        ClusterNodes_list = new ArrayList<String>();
         NodeMessages = new HashMap<String, List<String>>();
-        listAdapter  = new ExpandableListAdapter(this, ClusterNodes, NodeMessages);
+        listAdapter  = new ExpandableListAdapter(this, ClusterNodes_list, NodeMessages);
  
         resources = this.getResources();
         setContentView(R.layout.project_setup);
@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
         // hostinfo.put("user", "zcai");
         // hostinfo.put("host", "192.168.8.103");
         // hostinfo.put("config", "sandbox/app_test/cluster_config.txt");
-        new remoteExecution2().execute(servers.cluster_map.get("boxster"));
+        new NodeUpdate().execute(servers.cluster_map.get("boxster"));
 
         // get the listview
  
@@ -150,7 +150,7 @@ public class MainActivity extends Activity {
         //     public boolean onGroupClick(ExpandableListView parent, View v,
         //             int groupPosition, long id) {
         //         // Toast.makeText(getApplicationContext(),
-        //         // "Group Clicked " + ClusterNodes.get(groupPosition),
+        //         // "Group Clicked " + ClusterNodes_list.get(groupPosition),
         //         // Toast.LENGTH_SHORT).show();
         //         return false;
         //     }
@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
         //     @Override
         //     public void onGroupExpand(int groupPosition) {
         //         Toast.makeText(getApplicationContext(),
-        //                 ClusterNodes.get(groupPosition) + " Expanded",
+        //                 ClusterNodes_list.get(groupPosition) + " Expanded",
         //                 Toast.LENGTH_SHORT).show();
         //     }
         // });
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
         //     @Override
         //     public void onGroupCollapse(int groupPosition) {
         //         Toast.makeText(getApplicationContext(),
-        //                 ClusterNodes.get(groupPosition) + " Collapsed",
+        //                 ClusterNodes_list.get(groupPosition) + " Collapsed",
         //                 Toast.LENGTH_SHORT).show();
  
         //     }
@@ -186,10 +186,10 @@ public class MainActivity extends Activity {
         //         // TODO Auto-generated method stub
         //         Toast.makeText(
         //                 getApplicationContext(),
-        //                 ClusterNodes.get(groupPosition)
+        //                 ClusterNodes_list.get(groupPosition)
         //                         + " : "
         //                         + NodeMessages.get(
-        //                                 ClusterNodes.get(groupPosition)).get(
+        //                                 ClusterNodes_list.get(groupPosition)).get(
         //                                 childPosition), Toast.LENGTH_SHORT)
         //                 .show();
         //         return false;
@@ -202,9 +202,9 @@ public class MainActivity extends Activity {
      */
     private void prepareListData() { 
         // Adding child data
-        ClusterNodes.add("Node1");
-        ClusterNodes.add("Node2");
-        ClusterNodes.add("Node3");
+        ClusterNodes_list.add("Node1");
+        ClusterNodes_list.add("Node2");
+        ClusterNodes_list.add("Node3");
  
         // Adding child data
         List<String> Node1 = new ArrayList<String>();
@@ -222,9 +222,9 @@ public class MainActivity extends Activity {
         Node3.add("second");
         Node3.add("third");
 
-        NodeMessages.put(ClusterNodes.get(0), Node1); // Node, Node message
-        NodeMessages.put(ClusterNodes.get(1), Node2);
-        NodeMessages.put(ClusterNodes.get(2), Node3);
+        NodeMessages.put(ClusterNodes_list.get(0), Node1); // Node, Node message
+        NodeMessages.put(ClusterNodes_list.get(1), Node2);
+        NodeMessages.put(ClusterNodes_list.get(2), Node3);
     }
 
     private boolean isNetworkConnected() {
@@ -347,6 +347,7 @@ public class MainActivity extends Activity {
                 String username    = hostinfo[0].get("user");
                 String host        = hostinfo[0].get("host");
                 String config_file = hostinfo[0].get("config");
+                Log.w("App Debug: ", "in FetchClusterInfo " + username + " " + host + " " + config_file);
                 // final byte[] emptyPassPhrase = new byte[0];
                 //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
                 InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
@@ -370,7 +371,6 @@ public class MainActivity extends Activity {
                 sftpChannel = (ChannelSftp) channel;
 
                 // sftpChannel.get("dummy.txt", "dummy_copy.txt");
-                Log.w("cluster monitor debug: ", config_file);
                 String result = MainActivity.readStream(sftpChannel.get(config_file));
                 Log.w("cluster monitor debug: ", config_file);
                 // sftpChannel.exit();
@@ -389,7 +389,9 @@ public class MainActivity extends Activity {
         protected void onPostExecute(String result) {
             file_content_view.setText(result);
             if (success == true) {
+                Log.w("Debug: ", "onPostExecute  " + result);
                 servers = parseConfigfile(result, sftpChannel);
+                Log.w("Debug: ", "Server setup complete");
                 sftpChannel.exit();
                 session.disconnect();
                 parse_status_view.setText(servers.toString());
@@ -398,8 +400,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class remoteExecution2 extends AsyncTask<ClusterNode, Integer, String> {
+    private class NodeUpdate extends AsyncTask<ClusterNode, Integer, String> {
         private boolean success;
+        private int index;
         @Override
         protected String doInBackground(ClusterNode... node) {
             success = false;
@@ -415,9 +418,9 @@ public class MainActivity extends Activity {
                 // InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
                 Log.w("debug", node[0].toString());
 
-                ClusterNodes.add(label);
+                ClusterNodes_list.add(label);
                 listAdapter.notifyDataSetChanged();
-                int index = ClusterNodes.indexOf(label);
+                index = ClusterNodes_list.indexOf(label);
 
 
                 jsch.addIdentity(label,
@@ -442,29 +445,27 @@ public class MainActivity extends Activity {
                 InputStream output_stream=channel.getInputStream();
                 Log.w("debug", "here3");
                 channel.connect();
-                String output = readStream(output_stream);
-                List<String> msg = new ArrayList<String>();
-                msg.add(output);
-                NodeMessages.put(ClusterNodes.get(index), msg);
-                listAdapter.notifyDataSetChanged();
+                Log.w("debug", "here4");
+                final String output = readStream(output_stream);
                 channel.disconnect();
-                
-                return "good";
+                return output;
             } catch (IOException e) {
                 e.printStackTrace();                 
                 return "remote execute failed IO";
             } catch (JSchException e) {
                 e.printStackTrace(); 
                 return "remote execute failed 1";
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "bad ...";
             }
         }
-        // protected void onPostExecute(String result) {
-        //     // file_content_view.setText(result);
-        //     ClusterNodes.add("Boxster");
-        //     List<String> Boxster_msg = new ArrayList<String>();
-        //     Boxster_msg.add("ddd");
-        //     NodeMessages.put(ClusterNodes.get(0), Boxster_msg);
-        //     listAdapter.notifyDataSetChanged();
-        // }
+        protected void onPostExecute(String result) {
+            // file_content_view.setText(result);
+            List<String> msg = new ArrayList<String>();
+            msg.add(result);
+            NodeMessages.put(ClusterNodes_list.get(index), msg);
+            listAdapter.notifyDataSetChanged();
+        }
     }
 }
