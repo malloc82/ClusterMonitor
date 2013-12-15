@@ -13,6 +13,7 @@ import org.apache.http.conn.util.InetAddressUtils;
 import android.content.Context;
 
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -127,6 +128,31 @@ public class MainActivity extends Activity {
 
 
     public void clusterStatus(View button) {
+        setContentView(R.layout.activity_main);
+ 
+        expListView = (ExpandableListView) findViewById(R.id.lvExp);
+        expListView.setAdapter(listAdapter);
+
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+        TimerTask doAsynchronousTask = new TimerTask() {       
+                @Override
+                public void run() {
+                    handler.post(new Runnable() {
+                            public void run() {       
+                                try {
+                                    new NodeUpdate().execute(servers.cluster_map.get("boxster"));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                }
+            };
+        timer.schedule(doAsynchronousTask, 0, 10000); //execute in every 50000 ms
+    }
+
+    public void clusterStatus_async_task(View button) {
         setContentView(R.layout.activity_main);
  
         expListView = (ExpandableListView) findViewById(R.id.lvExp);
