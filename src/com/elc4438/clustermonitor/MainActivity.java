@@ -281,6 +281,8 @@ public class MainActivity extends Activity {
                     ClusterNode node = new ClusterNode(fields[0], user_ip[0], user_ip[1], fields[2]);
                     if (!node.getKey(ch)) {
                         Log.w("ClusterMonitor::parseConfigfile", "fail to get keybyte for "+user_ip[1]);
+                    } else {
+                        Log.w("ClusterMonitor::parseConfigfile", "key fetched");
                     }
                     cluster.addNode(node);
                 }
@@ -348,8 +350,6 @@ public class MainActivity extends Activity {
                 String host        = hostinfo[0].get("host");
                 String config_file = hostinfo[0].get("config");
                 Log.w("App Debug: ", "in FetchClusterInfo " + username + " " + host + " " + config_file);
-                // final byte[] emptyPassPhrase = new byte[0];
-                //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
                 InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
                 InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
                 
@@ -403,50 +403,39 @@ public class MainActivity extends Activity {
     private class NodeUpdate extends AsyncTask<ClusterNode, Integer, String> {
         private boolean success;
         private int index;
+        private String node_name;
         @Override
         protected String doInBackground(ClusterNode... node) {
             success = false;
             JSch jsch = new JSch();
             Session session = null;
             try {
-                String label    = node[0].getName();
+                node_name       = node[0].getName();
                 String username = node[0].getUser();
                 String host     = node[0].getIp();
-                // final byte[] emptyPassPhrase = new byte[0];
-                //InputStream prvkey_stream = Resources.openRawResource(R.raw.id_rsa);
-                // InputStream prvkey_stream = resources.openRawResource(R.raw.prvkey);
-                // InputStream pubkey_stream = resources.openRawResource(R.raw.pubkey);
                 Log.w("debug", node[0].toString());
-
-                ClusterNodes_list.add(label);
-                listAdapter.notifyDataSetChanged();
-                index = ClusterNodes_list.indexOf(label);
-
-
-                jsch.addIdentity(label,
-                                 node[0].prvkey,
+                byte[] prvkey_copy = node[0].prvkey.clone();
+                jsch.addIdentity(node_name,
+                                 prvkey_copy, // key will be zeroed out after the call
                                  node[0].pubkey,
                                  new byte[0]);
+                if (Arrays.equals(prvkey_copy, node[0].prvkey)) {
+                    Log.w("Debuge NodeUPdate: ", "keys are equal before and after calling addIdentity");
+                } else {
+                    Log.w("Debuge NodeUPdate: ", "keys changed.");
+                }
                 session = jsch.getSession(username, host, 22);
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.setConfig("PreferredAuthentications", "publickey");
-                // out.println("here1");
-                // session.setConfig("StrictHostKeyChecking", "no");            
-                // session.setPassword("Password");
-                Log.w("debug", "here1");
                 session.connect();
-                Log.w("debug", "here2");
-                // out.println("here2");
 
                 Channel channel = session.openChannel("exec");
                 ((ChannelExec)channel).setCommand("tail -n 1 log.txt");
                 channel.setInputStream(null);
                 ((ChannelExec)channel).setErrStream(System.err);
                 InputStream output_stream=channel.getInputStream();
-                Log.w("debug", "here3");
                 channel.connect();
-                Log.w("debug", "here4");
-                final String output = readStream(output_stream);
+                String output = readStream(output_stream);
                 channel.disconnect();
                 return output;
             } catch (IOException e) {
@@ -462,9 +451,19 @@ public class MainActivity extends Activity {
         }
         protected void onPostExecute(String result) {
             // file_content_view.setText(result);
-            List<String> msg = new ArrayList<String>();
-            msg.add(result);
-            NodeMessages.put(ClusterNodes_list.get(index), msg);
+            int index = ClusterNodes_list.indexOf(node_name);
+            if (index < 0) {
+                ClusterNodes_list.add(node_name);
+                index = ClusterNodes_list.size()-1;
+            }
+
+            if (NodeMessages.containsKey(node_name)) {
+                NodeMessages.get(node_name).add(result);
+            } else {
+                List<String> msg = new ArrayList<String>();
+                msg.add(result);
+                NodeMessages.put(node_name, msg);
+            }
             listAdapter.notifyDataSetChanged();
         }
     }
